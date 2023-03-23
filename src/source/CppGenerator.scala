@@ -243,8 +243,9 @@ class CppGenerator(spec: Spec) extends Generator(spec) {
           w.wl(s"friend bool operator>=(const $actualSelf& lhs, const $actualSelf& rhs);")
         }
 
-        // Constructor.
+        // Constructors.
         if(r.fields.nonEmpty) {
+          // Initializing fields
           w.wl
           if (r.fields.size == 1) {
             w.wl("//NOLINTNEXTLINE(google-explicit-constructor)")
@@ -255,6 +256,16 @@ class CppGenerator(spec: Spec) extends Generator(spec) {
           w.wl(": " + init(r.fields.head))
           r.fields.tail.map(f => ", " + init(f)).foreach(w.wl)
           w.wl("{}")
+
+          // Default (empty) constructor
+          if(!spec.cppOmitDefaultRecordCtor) {
+            w.wl
+            w.wl(actualSelf + "()")
+            val init = (f: Field) => idCpp.field(f.ident) + "()"
+            w.wl(": " + init(r.fields.head))
+            r.fields.tail.map(f => ", " + init(f)).foreach(w.wl)
+            w.wl("{}")
+          }
         }
 
         if (r.ext.cpp) {

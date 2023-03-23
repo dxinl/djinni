@@ -42,6 +42,7 @@ object Main {
     var cppUseWideStrings: Boolean = false
     var cppExportDefine: Option[String] = None
     var cppExportDefineHeader: Option[String] = None
+    var cppOmitDefaultRecordCtor: Boolean = false
     var javaOutFolder: Option[File] = None
     var javaPackage: Option[String] = None
     var javaClassAccessModifier: JavaAccessModifier.Value = JavaAccessModifier.Public
@@ -178,6 +179,8 @@ object Main {
         .text("The export define name for interfaces")
       opt[String]("cpp-export-define-header").valueName("<header>").foreach(x => cppExportDefineHeader = Some(x))
         .text("The header which defines export define")
+      opt[Boolean]("cpp-omit-default-record-constructor").valueName("<true/false>").foreach(x => cppOmitDefaultRecordCtor = x)
+        .text("Omit the default constructor for records in C++ code (default: `false`)")
       note("")
       opt[File]("jni-out").valueName("<out-folder>").foreach(x => jniOutFolder = Some(x))
         .text("The folder for the JNI C++ output files (Generator disabled if unspecified).")
@@ -400,6 +403,7 @@ object Main {
       cppUseWideStrings,
       cppExportDefine,
       cppExportDefineHeader,
+      cppOmitDefaultRecordCtor,
       jniOutFolder,
       jniHeaderOutFolder,
       jniIncludePrefix,
