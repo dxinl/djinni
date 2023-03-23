@@ -3,8 +3,8 @@ typedef: 'record'
 params: []
 prefix: ""
 cpp:
-  typename: '::djinni::DataRef'
-  header: '"$DataRef.hpp"'
+  typename: '::djinni::DataRefWrapper'
+  header: '"$DataRefWrapper.hpp"'
   byValue: false
 objc:
   typename: 'NSData'
