@@ -117,7 +117,7 @@ class CppMarshal(spec: Spec) extends Marshal(spec) {
     case e: MExtern => e.defType match {
       // Do not forward declare extern types, they might be in arbitrary namespaces.
       // This isn't a problem as extern types cannot cause dependency cycles with types being generated here
-      case DInterface => List(ImportRef("<memory>"), ImportRef(e.cpp.header))
+      case DInterface => List(ImportRef("<memory>"), ImportRef(resolveExtCppHdr(e.cpp.header)))
       case _ => List(ImportRef(resolveExtCppHdr(e.cpp.header)))
     }
     case p: MProtobuf =>
@@ -176,28 +176,42 @@ class CppMarshal(spec: Spec) extends Marshal(spec) {
       }
       withNs(ns, name)
     }
-    def base(m: Meta): String = m match {
-      case p: MPrimitive => p.cName
-      case MString => if (spec.cppUseWideStrings) "std::wstring" else "std::string"
-      case MDate => "std::chrono::system_clock::time_point"
-      case MBinary => "std::vector<uint8_t>"
-      case MOptional => spec.cppOptionalTemplate
-      case MList | MArray => "std::vector"
-      case MSet => "std::unordered_set"
-      case MMap => "std::unordered_map"
-      case d: MDef =>
-        d.defType match {
-          case DEnum => withNamespace(idCpp.enumType(d.name))
-          case DRecord => withNamespace(idCpp.ty(d.name))
-          case DInterface => s"std::shared_ptr<${withNamespace(idCpp.ty(d.name))}>"
+    def base(m: Meta, args: String): String = {
+      var templateName: String = ""
+      val typeName = m match {
+        case p: MPrimitive => p.cName
+        case MString => if (spec.cppUseWideStrings) "std::wstring" else "std::string"
+        case MDate => "std::chrono::system_clock::time_point"
+        case MBinary => "std::vector<uint8_t>"
+        case MOptional => spec.cppOptionalTemplate
+        case MList | MArray => "std::vector"
+        case MSet => "std::unordered_set"
+        case MMap => "std::unordered_map"
+        case d: MDef =>
+          d.defType match {
+            case DEnum => withNamespace(idCpp.enumType(d.name))
+            case DRecord => withNamespace(idCpp.ty(d.name))
+            case DInterface => {
+              templateName = "std::shared_ptr"
+              withNamespace(idCpp.ty(d.name))
+            }
+          }
+        case e: MExtern => {
+          e.defType match {
+            case DInterface => templateName = "std::shared_ptr"
+            case _ => templateName = ""
+          }
+          e.cpp.typename
         }
-      case e: MExtern => e.defType match {
-        case DInterface => s"std::shared_ptr<${e.cpp.typename}>"
-        case _ => e.cpp.typename
+        case p: MParam => idCpp.typeParam(p.name)
+        case p: MProtobuf => withNs(Some(p.body.cpp.ns), p.name)
+        case MVoid => "void"
       }
-      case p: MParam => idCpp.typeParam(p.name)
-      case p: MProtobuf => withNs(Some(p.body.cpp.ns), p.name)
-      case MVoid => "void"
+      if (templateName.length == 0) {
+        s"${typeName}${args}"
+      } else {
+        s"${templateName}<${typeName}${args}>"
+      }
     }
     def expr(tm: MExpr): String = {
       spec.cppNnType match {
@@ -208,19 +222,19 @@ class CppMarshal(spec: Spec) extends Marshal(spec) {
           tm.base match {
             case d: MDef =>
               d.defType match {
-                case DInterface => s"${nnType}<${withNamespace(idCpp.ty(d.name))}>"
-                case _ => base(tm.base) + args
+                case DInterface => s"${nnType}<${withNamespace(idCpp.ty(d.name))} + args>"
+                case _ => base(tm.base, args) 
               }
             case MOptional =>
               tm.args.head.base match {
                 case d: MDef =>
                   d.defType match {
-                    case DInterface => s"std::shared_ptr<${withNamespace(idCpp.ty(d.name))}>"
-                    case _ => base(tm.base) + args
+                    case DInterface => s"std::shared_ptr<${withNamespace(idCpp.ty(d.name))} + args>"
+                    case _ => base(tm.base, args)
                   }
-                case _ => base(tm.base) + args
+                case _ => base(tm.base, args)
               }
-            case _ => base(tm.base) + args
+            case _ => base(tm.base, args)
           }
         }
         case None =>
@@ -228,7 +242,7 @@ class CppMarshal(spec: Spec) extends Marshal(spec) {
           val prefix = if (!isInterface(ty)) {""} else { /* isInterface */
             if (isOptional(tm)) {"/*nullable*/ "} else {"/*not-null*/ "}}
           val args = if (ty.args.isEmpty) "" else ty.args.map(expr).mkString("<", ", ", ">")
-          prefix + base(ty.base) + args
+          prefix + base(ty.base, args)
       }
     }
     expr(tm)

@@ -1,0 +1,38 @@
+name: OutcomeCallback
+typedef: 'interface'
+params: [T, E]
+prefix: ''
+cpp:
+  typename: 'djinni::OutcomeCallback'
+  header: '"$OutcomeCallback.hpp"'
+  byValue: false
+  moveOnly: false
+objc:
+  typename: 'DJOutcomeCallback'
+  header: '"$DJOutcomeCallback.h"'
+  boxed: 'DJOutcomeCallback'
+  pointer: true
+  generic: true
+  hash: '%s.hash'
+objcpp:
+  translator: '::djinni::OutcomeCallback'
+  header: '"$OutcomeCallback_objc.hpp"'
+java:
+  typename: 'com.bytedance.djinni.OutcomeCallback'
+  boxed: 'com.bytedance.djinni.OutcomeCallback'
+  reference: true
+  generic: true
+  hash: '%s.hashCode()'
+jni:
+  translator: '::djinni::NativeOutcomeCallback'
+  header: '"$OutcomeCallback_jni.hpp"'
+  typename: jobject
+  typeSignature: 'Lcom/bytedance/djinni/OutcomeCallback;'
+wasm:
+  typename: 'em::val'
+  translator: '::djinni::OutcomeCallback'
+  header: '"$OutcomeCallback_wasm.hpp"'
+ts:
+  typename: 'OutcomeCallback'
+  module: '@djinni_support/OutcomeCallback'
+  generic: true
