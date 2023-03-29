@@ -1,6 +1,6 @@
 name: OutcomeCallback
 typedef: 'interface'
-params: [T, E]
+params: [T, E, O]
 prefix: ''
 cpp:
   typename: 'djinni::OutcomeCallback'

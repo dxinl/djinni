@@ -20,11 +20,11 @@
 
 namespace djinni {
 
-template<typename R, typename E>
+template<typename RESULT, typename ERROR, typename OTHERS>
 class OutcomeCallback {
 public:
     virtual ~OutcomeCallback() = default;
-    virtual void Callback(const ::djinni::expected<R, E> &r) = 0;
+    virtual void Callback(const ::djinni::expected<RESULT, ERROR> &r, const OTHERS &others) = 0;
 };
 
 } // namespace djinni
